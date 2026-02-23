@@ -71,13 +71,25 @@ main_kb = ReplyKeyboardMarkup(
     resize_keyboard=True
 )
 
+training_kb = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text="⛔ Стоп")],
+    ],
+    resize_keyboard=True
+)
+
 API_TOKEN = "8286686650:AAE1Gjz3URWB9_UYMJqtjfjeey6-aiGtTWY"
 
 bot = Bot(token=API_TOKEN)
 dp = Dispatcher(storage=MemoryStorage())
 
+user_training_word = {}
+
 class AddWordState(StatesGroup):
     waiting_for_word = State()
+
+class TrainingState(StatesGroup):
+    waiting_for_answer = State()
 
 @dp.message(Command("start"))
 async def start(message: types.Message):
@@ -97,9 +109,65 @@ async def list_words_button(message: types.Message):
     text = "📚 Твои слова:\n\n" + "\n".join(f"• {w}" for w in words)
     await message.answer(text)
 
+async def start_training(message: types.Message, state: FSMContext):
+    words = await get_words(message.from_user.id)
+    if not words:
+        await message.answer("У тебя пока нет слов для тренировки.", reply_markup=main_kb)
+        return
+
+    word = random.choice(words)
+   
+    user_training_word[message.from_user.id] = word
+
+    await message.answer(
+        f"Переведи слово: {word}",
+        reply_markup=training_kb
+    )
+
+    await state.set_state(TrainingState.waiting_for_answer)
+
 @dp.message(lambda m: m.text == "🎯 Тренировка")
-async def training_button(message: types.Message):
-    await message.answer("Тренировка скоро будет доступна!")
+async def training_button(message: types.Message, state: FSMContext):
+    await start_training(message, state)
+
+   @dp.message(TrainingState.waiting_for_answer)
+async def training_answer(message: types.Message, state: FSMContext):
+    # Стоп
+    if message.text == "⛔ Стоп":
+        await state.clear()
+        await message.answer("Тренировка остановлена.", reply_markup=main_kb)
+        return
+
+    word = user_training_word.get(message.from_user.id)
+    if not word:
+        await message.answer("Ошибка. Начни тренировку заново.", reply_markup=main_kb)
+        await state.clear()
+        return
+
+   
+    user_answer = message.text.strip().lower()
+correct_answer = await translate_word(word)  
+
+correct_ru = correct_answer["translation"].strip().lower()
+
+if user_answer == correct_ru:
+    await message.answer("Верно! 👍")
+else:
+    await message.answer(f"Неверно ❌\nПравильный ответ: {correct_ru}")
+
+    words = await get_words(message.from_user.id)
+    if not words:
+        await message.answer("Слова закончились.", reply_markup=main_kb)
+        await state.clear()
+        return
+
+    new_word = random.choice(words)
+    user_training_word[message.from_user.id] = new_word
+
+    await message.answer(
+        f"Переведи слово: {new_word}",
+        reply_markup=training_kb
+    ) 
 
 @dp.message(lambda m: m.text == "➕ Добавить слово")
 async def add_word_button(message: types.Message, state: FSMContext):
@@ -118,7 +186,7 @@ async def choose_level(message: types.Message):
     await message.answer("Выбери уровень:", reply_markup=kb)
 
 @dp.message(F.text.startswith("Уровень"))
-async def add_level_words(message: types.Message):
+async def add_level_words(message: types.Message, state: FSMContext):
     level = message.text.split()[1]  # "1" или "2"
 
     if level == "1":
@@ -136,6 +204,8 @@ async def add_level_words(message: types.Message):
             count += 1
 
     await message.answer(f"Готово! Добавлено {count} слов.")
+    # СРАЗУ запускаем тренировку
+    await start_training(message, state)
 
 @dp.message(Command("add"))
 async def add_word_command(message: types.Message, state: FSMContext):
