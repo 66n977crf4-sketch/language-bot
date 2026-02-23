@@ -59,6 +59,7 @@ async def add_word_command(message: types.Message, state: FSMContext):
 
 @dp.message(AddWordState.waiting_for_word)
 async def catch_word(message: types.Message, state: FSMContext):
+    print("Received message:", message.text)
     word = message.text.strip()
 
     saved = await add_word(message.from_user.id, word)
@@ -86,6 +87,7 @@ async def catch_word(message: types.Message, state: FSMContext):
 
 async def main():
     await init_db()
+    print("Bot started")
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
