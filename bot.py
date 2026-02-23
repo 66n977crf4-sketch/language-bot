@@ -1,4 +1,5 @@
 import asyncio
+import random
 from db import init_db, add_word, get_words
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
@@ -133,7 +134,7 @@ async def training_button(message: types.Message, state: FSMContext):
 @dp.message(TrainingState.waiting_for_answer)
 async def training_answer(message: types.Message, state: FSMContext):
     # Стоп
-    if message.text == "⛔ Стоп":
+    if "стоп" in message.text.lower():
         await state.clear()
         await message.answer("Тренировка остановлена.", reply_markup=main_kb)
         return
