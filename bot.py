@@ -150,10 +150,10 @@ async def training_answer(message: types.Message, state: FSMContext):
 
     correct_ru = correct_answer["translation"].strip().lower()
 
-    if user_answer == correct_ru:
-    await message.answer("Верно! 👍")
+    if user_answer == correct_ru:         
+        await message.answer("Верно! 👍")
     else:
-    await message.answer(f"Неверно ❌\nПравильный ответ: {correct_ru}")
+        await message.answer(f"Неверно ❌\nПравильный ответ: {correct_ru}")
 
     words = await get_words(message.from_user.id)
     if not words:
