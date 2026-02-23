@@ -8,11 +8,65 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from translate import translate_word
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
+LEVEL_1 = [
+    "apple", "book", "water", "dog", "cat",
+    "house", "car", "street", "food", "milk",
+    "bread", "coffee", "tea", "sun", "moon",
+    "day", "night", "time", "hand", "eye",
+    "head", "face", "friend", "family", "child",
+    "man", "woman", "boy", "girl", "school",
+    "work", "city", "country", "room", "door",
+    "window", "table", "chair", "bed", "phone",
+    "computer", "money", "shop", "market", "store",
+    "go", "come", "see", "look", "eat",
+    "drink", "sleep", "run", "walk", "sit",
+    "stand", "take", "give", "make", "say",
+    "speak", "read", "write", "open", "close",
+    "big", "small", "good", "bad", "happy",
+    "sad", "hot", "cold", "new", "old",
+    "fast", "slow", "easy", "hard", "long",
+    "short", "right", "left", "up", "down",
+    "yes", "no", "hello", "bye", "please",
+    "thanks", "sorry", "today", "tomorrow", "now"
+]
+
+LEVEL_2 = [
+    "morning", "evening", "week", "month", "year",
+    "weather", "rain", "snow", "wind", "cloud",
+    "river", "lake", "forest", "mountain", "beach",
+    "travel", "trip", "ticket", "airport", "train",
+    "bus", "station", "hotel", "room", "key",
+    "doctor", "nurse", "hospital", "medicine", "health",
+    "strong", "weak", "clean", "dirty", "beautiful",
+    "ugly", "angry", "tired", "hungry", "thirsty",
+    "music", "song", "movie", "film", "game",
+    "sport", "football", "basketball", "tennis", "swim",
+    "jump", "drive", "fly", "build", "fix",
+    "cook", "wash", "help", "learn", "teach",
+    "understand", "remember", "forget", "start", "finish",
+    "buy", "sell", "pay", "cost", "price",
+    "color", "red", "blue", "green", "yellow",
+    "black", "white", "brown", "pink", "orange",
+    "animal", "bird", "fish", "horse", "cow",
+    "sheep", "pig", "chicken", "mouse", "rabbit",
+    "body", "arm", "leg", "foot", "back",
+    "hair", "nose", "mouth", "teeth", "heart",
+    "family", "parents", "mother", "father", "sister",
+    "brother", "cousin", "uncle", "aunt", "grandmother",
+    "grandfather", "job", "boss", "worker", "company",
+    "office", "meeting", "project", "task", "plan",
+    "question", "answer", "idea", "problem", "solution",
+    "happy", "excited", "bored", "worried", "calm",
+    "early", "late", "always", "never", "sometimes",
+    "often", "usually", "together", "alone", "again"
+]
+
 main_kb = ReplyKeyboardMarkup(
     keyboard=[
         [KeyboardButton(text="➕ Добавить слово")],
         [KeyboardButton(text="📚 Список слов")],
         [KeyboardButton(text="🎯 Тренировка")],
+        [KeyboardButton(text="📦 Готовые уровни слов")],
     ],
     resize_keyboard=True
 )
@@ -51,6 +105,37 @@ async def training_button(message: types.Message):
 async def add_word_button(message: types.Message, state: FSMContext):
     await message.answer("Напиши слово, которое хочешь сохранить:")
     await state.set_state(AddWordState.waiting_for_word)
+
+@dp.message(F.text == "📦 Готовые уровни слов")
+async def choose_level(message: types.Message):
+    kb = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="Уровень 1")],
+            [KeyboardButton(text="Уровень 2")],
+        ],
+        resize_keyboard=True
+    )
+    await message.answer("Выбери уровень:", reply_markup=kb)
+
+@dp.message(F.text.startswith("Уровень"))
+async def add_level_words(message: types.Message):
+    level = message.text.split()[1]  # "1" или "2"
+
+    if level == "1":
+        words = LEVEL_1
+    elif level == "2":
+        words = LEVEL_2
+    else:
+        await message.answer("Такого уровня нет.")
+        return
+
+    count = 0
+    for w in words:
+        saved = await add_word(message.from_user.id, w)
+        if saved:
+            count += 1
+
+    await message.answer(f"Готово! Добавлено {count} слов.")
 
 @dp.message(Command("add"))
 async def add_word_command(message: types.Message, state: FSMContext):
