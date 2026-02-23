@@ -130,7 +130,7 @@ async def start_training(message: types.Message, state: FSMContext):
 async def training_button(message: types.Message, state: FSMContext):
     await start_training(message, state)
 
-   @dp.message(TrainingState.waiting_for_answer)
+@dp.message(TrainingState.waiting_for_answer)
 async def training_answer(message: types.Message, state: FSMContext):
     # Стоп
     if message.text == "⛔ Стоп":
@@ -146,13 +146,13 @@ async def training_answer(message: types.Message, state: FSMContext):
 
    
     user_answer = message.text.strip().lower()
-correct_answer = await translate_word(word)  
+    correct_answer = await translate_word(word)  
 
-correct_ru = correct_answer["translation"].strip().lower()
+    correct_ru = correct_answer["translation"].strip().lower()
 
-if user_answer == correct_ru:
+    if user_answer == correct_ru:
     await message.answer("Верно! 👍")
-else:
+    else:
     await message.answer(f"Неверно ❌\nПравильный ответ: {correct_ru}")
 
     words = await get_words(message.from_user.id)
