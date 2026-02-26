@@ -1,6 +1,16 @@
 import asyncio
 import random
-from db import init_db, add_word, get_words
+import time
+
+from db import (
+    init_db,
+    add_word,
+    get_words,
+    get_word_for_training,
+    update_word_success,
+    update_word_fail
+)
+
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.fsm.state import State, StatesGroup
